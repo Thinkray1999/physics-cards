@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="物理复习">
+<meta name="theme-color" content="#1c1a24">
+<title>六极物理复习卡</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;900&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+/* 深夜雷雨：深灰紫底，一张卡居中，背景画细白闪电 */
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  --night:#1c1a24; --cloud:#2a2733; --ink:#ece8f2; --mist:#a59fb3; --bolt:#f4f1ff; --line:#3d3948;
+  --fast:#8fa6c4; --big:#c9a46a; --heavy:#a38fc8; --hot:#c98a7a; --cold:#7fb3b0;
+  --forgot:#c98a7a; --fuzzy:#c9a46a; --known:#8fb38a;
+  --serif:"Noto Serif SC","Songti SC","STSong",serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--night);color:var(--ink);font-family:var(--serif);font-size:17px;line-height:1.8}
+#sky{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+main{position:relative;z-index:1;max-width:560px;margin:0 auto;padding-block:28px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:18px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+h1{font-size:26px;font-weight:900;margin:0;letter-spacing:.06em;text-wrap:balance}
+.meta{font-family:var(--mono);font-size:13px;color:var(--mist);display:flex;gap:14px;flex-wrap:wrap}
+.meta b{color:var(--bolt);font-weight:400}
+.chapters{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font:inherit;font-size:14px;padding:3px 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--mist);cursor:pointer}
+.chip[aria-pressed="true"]{color:var(--night);background:var(--c,var(--ink));border-color:var(--c,var(--ink))}
+.card{position:relative;min-height:300px;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--cloud) 88%,transparent);
+  padding:28px 24px 22px;display:flex;flex-direction:column;gap:14px;cursor:pointer;backdrop-filter:blur(2px)}
+.card:focus-visible{outline:2px solid var(--bolt);outline-offset:3px}
+.tag{font-family:var(--mono);font-size:12px;letter-spacing:.12em;color:var(--c)}
+.q{font-size:21px;font-weight:600;line-height:1.65;margin:0;text-wrap:balance}
+.a{border-top:1px solid var(--line);padding-top:14px;color:var(--ink);margin:0}
+.hint{margin-top:auto;font-size:14px;color:var(--mist)}
+.src{position:absolute;right:18px;bottom:14px;font-family:var(--mono);font-size:12px;color:var(--mist)}
+.grade{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grade button{font:inherit;font-size:16px;padding:12px 6px;border-radius:10px;border:1px solid var(--line);background:var(--cloud);color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;line-height:1.3}
+.grade button small{font-family:var(--mono);font-size:11px;color:var(--mist);margin-top:4px}
+.grade button:hover,.grade button:focus-visible{border-color:var(--k);outline:none}
+.grade .f{--k:var(--forgot)} .grade .z{--k:var(--fuzzy)} .grade .k{--k:var(--known)}
+.done{text-align:center;padding:40px 16px;display:flex;flex-direction:column;gap:14px;align-items:center}
+.done p{margin:0;color:var(--mist)}
+.btn{font:inherit;padding:8px 20px;border-radius:999px;border:1px solid var(--bolt);background:transparent;color:var(--bolt);cursor:pointer}
+.btn:focus-visible{outline:2px solid var(--bolt);outline-offset:2px}
+.progress{height:2px;background:var(--line);border-radius:2px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--bolt);width:0;transition:width .3s}
+footer{font-size:13px;color:var(--mist);text-align:center}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+<main>
+  <header>
+    <h1>六极物理复习卡</h1>
+    <div class="meta"><span>连续 <b id="streak">0</b> 天</span><span>今天 <b id="doneN">0</b> 张</span><span>题库 <b id="total">0</b></span></div>
+  </header>
+  <div class="chapters" id="chapters" role="group" aria-label="只刷某一章"></div>
+  <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+  <section id="stage" aria-live="polite"></section>
+  <footer>记录只存在这台设备的浏览器里</footer>
+</main>
+
+<script>
+const CH={fast:{n:"极快",c:"--fast"},big:{n:"极大",c:"--big"},heavy:{n:"极重",c:"--heavy"},hot:{n:"极热",c:"--hot"},cold:{n:"极冷",c:"--cold"}};
+const CARDS=[
+["fast","狭义相对论的两条地基是什么？","相对性原理：所有惯性系里物理定律都一样；光速不变：真空光速在任何惯性系里都一样，跟光源怎么动无关。"],
+["fast","站台看火车上的光钟，为什么运动的钟变慢？","光走斜线，路更长，光速又不变，所以每“嘀嗒”一下要更久。"],
+["fast","尺缩缩的是哪个方向？跟钟慢什么关系？","沿运动方向变短，垂直方向不变；缩短的倍数和钟慢是同一个因子。"],
+["fast","车厢正中亮灯，站台上看，光先到车头还是车尾？","先到车尾：车尾迎上来，车头往前躲。隔着距离的两件事是否同时，取决于参考系。"],
+["fast","μ 子能到达地面，地面和 μ 子各怎么解释？","地面看：它的钟慢、寿命变长；μ 子看：大气层被缩短。钟慢和尺缩是一件事的两面。"],
+["fast","双胞胎悖论里，为什么是哥哥更年轻？","哥哥要调头、换了参考系；弟弟一直在同一个惯性系，弟弟的计算全程有效。"],
+["fast","哥哥调头时，地球的钟“跳”多少？","时间差 = 速度改变量 × 距离 ÷ c²。距离越远跳得越多。例：0.6c 飞 3 光年，调头跳 3.6 年。"],
+["fast","有质量的东西为什么到不了光速？","越接近光速，灌进去的能量越多变成惯性，越难加速；到光速要无穷大的能量。"],
+["big","宇宙在膨胀，证据是什么？","星系光谱整体红移，说明在远离我们；哈勃定律：越远的星系退行越快，v = H × d。"],
+["big","宇宙膨胀有中心吗？","没有，是空间本身均匀撑大。像葡萄干面包，站在哪颗葡萄干上看，别的都在远离。"],
+["big","为什么倒推膨胀能得出宇宙年龄？","t = d ÷ v = d ÷ (H × d) = 1/H，d 被约掉，所有星系同一时刻挤回一起。修正后约 138 亿年。"],
+["big","可观测宇宙半径为什么是约 465 亿光年，不是 138 亿？","最远的光跑了 138 亿年，路上空间一直在撑大，当年发光的地方现在已被带到更远处。"],
+["big","恒星为什么质量越大寿命越短？","引力强 → 核心压力大、温度高 → 核反应猛。燃料虽多，消耗涨得更多。"],
+["big","恒星的结局怎么看最终质量？","小于 1.44 倍太阳 → 白矮星；1.44 至 3 倍 → 中子星；大于 3 倍 → 黑洞。"],
+["big","暗物质和暗能量，一个往里拉、一个往外推，各占多少？","暗物质约 27%，抱紧星系；暗能量约 68%，让宇宙加速膨胀；普通物质只占约 5%。"],
+["heavy","等效原理说的是什么？","加速和引力在局部分不出来。加速朝哪，哪边就是“上”。"],
+["heavy","引力场里，高处钟快还是低处钟快？","高处快、低处慢。钟慢看的是在引力坑里陷得多深，不是那一点引力多强。"],
+["heavy","GPS 卫星的钟每天净快多少？为什么？","约 38 微秒：高处钟快 +45，跑得快钟慢 −7。不修正，每天定位偏差约 10 公里。"],
+["heavy","广义相对论里，引力的本质是什么？","时空弯曲。质量压弯时空，时空指引物体走“最直的路”，只是路本身弯了。"],
+["heavy","地球的史瓦西半径大约多大？","约 9 毫米，花生米大小（太阳约 3 公里）。视界半径 = 2GM/c²，跟质量成正比。"],
+["heavy","为什么黑洞越大，需要的密度越小？","质量 ×2，半径 ×2，体积 ×8，密度只剩 1/4。"],
+["heavy","远处看一个人掉进黑洞，是什么样？","越来越慢，在视界边像冻住，越来越红、越来越暗，最后消失。他自己的表照常走。"],
+["heavy","LIGO 怎么探测引力波？","两束激光在垂直的 4 公里长管里来回跑，引力波让空间一边拉长一边压短，汇合时干涉图样改变。"],
+["hot","温度的本质是什么？","温度正比于分子的平均动能。"],
+["hot","为什么熵会增加？","乱的摆法压倒性地多，系统随机变化几乎必然落进“乱”里。熵增就是概率。S = k ln W。"],
+["hot","碎杯子会自己复原吗？","不是绝对禁止，只是概率小到宇宙活一万遍也等不到。第二定律是“几乎必然”。"],
+["hot","烧水到 100℃，继续加热为什么温度不涨？","热量用来解开分子间的吸引，不加快分子，这部分叫潜热。"],
+["hot","激光制冷：为什么只减速迎面来的原子？","激光频率略低于能级差，只有迎面原子因多普勒蓝移刚好对上，吸收光子被撞慢。"],
+["hot","混沌和随机有什么区别？","混沌每一步都确定、服从定律，但初始条件差一点后来差很多，所以不可预测。"],
+["hot","耗散结构为什么不违反熵增？","系统内熵减少，外界熵增加得更多，总熵仍在增。例：贝纳德对流、生命。"],
+["cold","为什么说“冷即秩序”？","冷 → 能量低 → 能占的摆法少 → 熵低 → 有序。越冷，量子效应越显眼。"],
+["cold","导体、绝缘体、半导体，用能带一句话区分？","没满 = 导体；满了 + 宽隙 = 绝缘体；满了 + 窄隙 = 半导体。"],
+["cold","玻璃为什么透明？","可见光光子能量低于玻璃的能隙，推不动电子、不被吸收，只好穿过。"],
+["cold","玻色子和费米子最大的区别？","费米子不能挤进同一状态（泡利不相容）；玻色子能，爱扎堆。"],
+["cold","超导为什么电阻为零？","电子经声子配成库珀对，像玻色子一样凝聚成整体，单个声子撞不散。"],
+["cold","量子霍尔效应的电阻为什么能做国际标准？","平台是 h/(νe²)，h/e² ≈ 25813 欧，跟材料无关。"],
+["cold","任意子是什么？","二维里一种涌现的准粒子，比如队形里的“缺口”，带分数电荷，交换时能转任意角度。"],
+["cold","安德森“多则不同”说的是什么？","一个电子不会超导，一个原子没有温度。大群粒子凑在一起会冒出新东西，要新概念才能看懂。"]
+];
+const KEY="phys-cards-v1", DAY=864e5;
+const today=()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime()};
+let S={cards:{},streak:0,last:0,doneDay:0,doneN:0};
+try{const v=JSON.parse(localStorage.getItem(KEY));if(v)S=Object.assign(S,v)}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+if(S.doneDay!==today()){S.doneDay=today();S.doneN=0}
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+let filter=null, queue=[], i=0, flipped=false, batch=0;
+
+function due(){
+  const t=today();
+  return CARDS.map((c,id)=>({id,c})).filter(({id,c})=>(!filter||c[0]===filter)&&((S.cards[id]?.due??0)<=t));
+}
+function shuffle(a){for(let k=a.length-1;k>0;k--){const j=Math.random()*(k+1)|0;[a[k],a[j]]=[a[j],a[k]]}return a}
+function deal(){queue=shuffle(due()).slice(0,5);i=0;flipped=false;batch=queue.length;render()}
+function grade(g){
+  const id=queue[i].id, s=S.cards[id]||{step:-1}, steps=[3,7,15,30], t=today();
+  if(g==="f"){s.step=-1;s.due=t+DAY}
+  else if(g==="z"){s.due=t+3*DAY}
+  else{s.step=Math.min(s.step+1,3);s.due=t+steps[s.step]*DAY}
+  S.cards[id]=s; S.doneN++;
+  if(S.last!==t){S.streak=(S.last===t-DAY)?S.streak+1:1;S.last=t}
+  save(); i++; flipped=false; render();
+}
+function nextFor(id){const s=S.cards[id];const n=s?Math.min(s.step+1,3):0;return [3,7,15,30][n]}
+function render(){
+  const st=document.getElementById("stage");
+  document.getElementById("streak").textContent=(S.last>=today()-DAY)?S.streak:0;
+  document.getElementById("doneN").textContent=S.doneN;
+  document.getElementById("total").textContent=CARDS.length;
+  document.getElementById("bar").style.width=batch?(i/batch*100)+"%":"0";
+  if(i>=queue.length){
+    const left=due().length;
+    st.innerHTML=`<div class="done"><p>${batch?"这一轮刷完了。":"今天这部分没有到期的卡。"}</p>${left?`<p>还有 ${left} 张到期</p><button class="btn" id="more">再来 5 张</button>`:`<p>明天再见。</p>`}</div>`;
+    const m=document.getElementById("more"); if(m)m.onclick=deal; return;
+  }
+  const {id,c}=queue[i], ch=CH[c[0]];
+  st.innerHTML=`<div class="card" id="card" tabindex="0" role="button" aria-label="${flipped?"答案":"点一下看答案"}" style="--c:var(${ch.c})">
+    <span class="tag">${ch.n} · ${i+1}/${queue.length}</span>
+    <p class="q">${c[1]}</p>
+    ${flipped?`<p class="a">${c[2]}</p><span class="src">六极物理 · ${ch.n}</span>`:`<span class="hint">点一下看答案</span>`}
+  </div>
+  ${flipped?`<div class="grade">
+    <button class="f" data-g="f">忘了<small>明天</small></button>
+    <button class="z" data-g="z">模糊<small>3 天后</small></button>
+    <button class="k" data-g="k">记得<small>${nextFor(id)} 天后</small></button></div>`:""}`;
+  const card=document.getElementById("card");
+  const flip=()=>{if(!flipped){flipped=true;render();strike()}};
+  card.onclick=flip; card.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();flip()}};
+  st.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>grade(b.dataset.g));
+}
+function chips(){
+  const box=document.getElementById("chapters");
+  const all=[[null,"全部",null],...Object.entries(CH).map(([k,v])=>[k,v.n,v.c])];
+  box.innerHTML=all.map(([k,n,c])=>`<button class="chip" data-k="${k??""}" aria-pressed="${filter===k}" ${c?`style="--c:var(${c})"`:""}>${n}</button>`).join("");
+  box.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{filter=b.dataset.k||null;chips();deal()});
+}
+
+/* 背景闪电 */
+const cv=document.getElementById("sky"),cx=cv.getContext("2d");
+let bolts=[];
+function bolt(x,y,ang,len,w,depth){
+  const pts=[[x,y]];let a=ang;
+  for(let k=0;k<len;k++){a+=(Math.random()-.5)*.9;x+=Math.cos(a)*14;y+=Math.sin(a)*14;pts.push([x,y]);
+    if(depth<3&&Math.random()<.08)bolts.push({pts:null,gen:[x,y,a+(Math.random()-.5)*1.4,len*.5|0,w*.5,depth+1]});}
+  return {pts,w};
+}
+function makeSky(){
+  const W=innerWidth,H=innerHeight,r=devicePixelRatio||1;cv.width=W*r;cv.height=H*r;cx.setTransform(r,0,0,r,0,0);
+  bolts=[];const n=3;
+  for(let k=0;k<n;k++){const b=bolt(Math.random()*W,-10,Math.PI/2+(Math.random()-.5)*.8,60,1.2,0);bolts.push(b)}
+  for(let k=0;k<bolts.length;k++){const b=bolts[k];if(!b.pts){const g=b.gen;Object.assign(b,bolt(...g))}}
+  draw(.35);
+}
+function draw(alpha){
+  cx.clearRect(0,0,cv.width,cv.height);
+  cx.strokeStyle=css("--bolt");cx.lineCap="round";cx.lineJoin="round";
+  for(const b of bolts){cx.globalAlpha=alpha*Math.min(1,b.w);cx.lineWidth=b.w;cx.beginPath();b.pts.forEach(([x,y],k)=>k?cx.lineTo(x,y):cx.moveTo(x,y));cx.stroke()}
+  cx.globalAlpha=1;
+}
+function strike(){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  let t=0;const f=()=>{t++;draw(t<4?.9:.35+.55*Math.max(0,1-(t-4)/14));if(t<18)requestAnimationFrame(f)};f();
+}
+addEventListener("resize",makeSky);
+makeSky(); chips(); deal();
+</script>
+
+</body>
+</html>
